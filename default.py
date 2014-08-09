@@ -49,11 +49,25 @@ def readContent(url):
 	response.close()
 	return content
 
-def getVideoUrl(url,type):
+def getVideoLinks(url):
+	print "Reading " + url
+	content = readContent('http://www.indopia.com/'+url)
 	url = url.replace('./showtime/watch/movie/','')
 	id = re.sub(r'/.*', '', url)
-	url = 'http://38.76.15.172/vod/_definsts_/mp4:mp4/'+type+'/'+id+'.mp4/playlist.m3u8'
-	return url
+	linksContainer = common.parseDOM(content, "div", attrs = { "class": "bw-cont"})
+	linksList = common.parseDOM(linksContainer, "ul", attrs = {})
+	links = common.parseDOM(linksList, "a", attrs = {}, ret = "href")
+	titles = common.parseDOM(linksList, "a", attrs = {}, ret = "title")
+	list = []
+	print "Ready to prepare list. Links found:" + str(len(links))
+	for x in xrange(len(links)):
+		jsurl = re.compile("javascript").search(links[x])
+		if jsurl is None:
+			video = {}
+			video["title"] = "Play " + titles[x] + " resolution"
+			video["link"] = 'http://38.76.15.172/vod/_definsts_/mp4:mp4/'+titles[x].lower()+'/'+id+'.mp4/playlist.m3u8'
+			list.append(video)
+	return list
 
 if mode is None:
 	content = readContent(website + '/movies/')
@@ -101,20 +115,8 @@ elif mode[0] == 'search':
 elif mode[0] == 'listresolutions':
 	url = args['url'][0]
 	name = args['name'][0]
-	''' hd version '''
-	videourl = getVideoUrl(url, 'hd')
-	li = xbmcgui.ListItem(name + ' hd', iconImage='DefaultVideo.png')
-	xbmcplugin.addDirectoryItem(handle=addon_handle, url=videourl, listitem=li)
-	''' high resolution '''
-	videourl = getVideoUrl(url, 'high')
-	li = xbmcgui.ListItem(name + ' high-res', iconImage='DefaultVideo.png')
-	xbmcplugin.addDirectoryItem(handle=addon_handle, url=videourl, listitem=li)
-	''' mid resolution '''
-	videourl = getVideoUrl(url, 'med')
-	li = xbmcgui.ListItem(name + ' med-res', iconImage='DefaultVideo.png')
-	xbmcplugin.addDirectoryItem(handle=addon_handle, url=videourl, listitem=li)
-	''' low resolution '''
-	videourl = getVideoUrl(url, 'low')
-	li = xbmcgui.ListItem(name + ' low-res', iconImage='DefaultVideo.png')
-	xbmcplugin.addDirectoryItem(handle=addon_handle, url=videourl, listitem=li)
-	xbmcplugin.endOfDirectory(addon_handle)
+	list = getVideoLinks(url)
+	for video in list:
+		li = xbmcgui.ListItem(video["title"], iconImage='DefaultVideo.png')
+		xbmcplugin.addDirectoryItem(handle=addon_handle, url=video["link"], listitem=li)	
+xbmcplugin.endOfDirectory(addon_handle)
