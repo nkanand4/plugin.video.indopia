@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.video.indopia" name="Indopia" version="0.0.31" provider-name="Nitesh Anand">
+    <requires>
+        <import addon="xbmc.python" version="2.1.0"/>
+        <import addon="script.module.parsedom" version="0.9.1"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <summary lang="en">Plays movies from Indopia.com/</summary>
+        <description lang="en">Plays videos from from Indopia.com</description>
+    </extension>
+</addon>
