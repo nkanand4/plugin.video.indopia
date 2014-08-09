@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.indopia" name="Indopia" version="0.0.32" provider-name="Nitesh Anand">
+<addon id="plugin.video.indopia" name="Indopia" version="0.0.33" provider-name="Nitesh Anand">
     <requires>
         <import addon="xbmc.python" version="2.1.0"/>
         <import addon="script.module.parsedom" version="0.9.1"/>
