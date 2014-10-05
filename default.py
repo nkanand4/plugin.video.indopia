@@ -2,6 +2,7 @@
 import sys, urllib, json, urlparse, re
 import xbmc, xbmcgui
 import xbmcplugin
+import xbmcaddon
 if sys.version_info < (2, 7):
     import simplejson
 else:
@@ -60,6 +61,8 @@ def getVideoLinks(url):
 	thumbnail = getImage(url)
 	url = url.replace('./showtime/watch/movie/','')
 	id = re.sub(r'/.*', '', url)
+	indopiasettings = xbmcaddon.Addon('plugin.video.indopia')
+	server = indopiasettings.getSetting('server')
 	linksContainer = common.parseDOM(content, "div", attrs = { "class": "bw-cont"})
 	linksList = common.parseDOM(linksContainer, "ul", attrs = {})
 	links = common.parseDOM(linksList, "a", attrs = {}, ret = "href")
@@ -73,7 +76,7 @@ def getVideoLinks(url):
 			video = {}
 			video["image"] = thumbnail
 			video["title"] = "Play " + titles[index] + " resolution"
-			video["link"] = 'http://38.76.15.172/vod/_definsts_/mp4:mp4/'+titles[index].lower()+'/'+id+'.mp4/playlist.m3u8'
+			video["link"] = server+'/vod/_definsts_/mp4:mp4/'+titles[index].lower()+'/'+id+'.mp4/playlist.m3u8'
 			list.append(video)
 	return list
 
