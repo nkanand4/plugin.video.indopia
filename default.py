@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, urllib, json, urlparse, re
+import sys, urllib, urllib2, json, urlparse, re
 import xbmc, xbmcgui
 import xbmcplugin
 import xbmcaddon
@@ -44,6 +44,21 @@ def GUIEditExportName():
 			exit = False
 	return(name)
 
+def getMovies(postData):
+	xbmc.executebuiltin('Notification(Status!, Requesting listing page.)')
+	content = getMovieListingPage(postData)
+	hahadiv = common.parseDOM(content, "div", attrs = { "class": "haha" })
+	xbmc.executebuiltin('Notification(Status!, Parsing links now...)')
+	results = common.parseDOM(hahadiv, "div", attrs = { "style": "float:left;width:425px;margin:5px 0px;border:red solid 0px;" })
+	return results
+
+def getMovieListingPage(postData):
+	url = 'http://www.indopia.com/movies/index/years/'
+	data = urllib.urlencode(postData)
+	req = urllib2.Request(url, data)
+	response = urllib2.urlopen(req)
+	return response.read()
+
 def readContent(url):
 	response = urllib.urlopen(url)
 	content = response.read()
@@ -85,28 +100,38 @@ if mode is None:
 	url = build_url({'mode': 'search'})
 	li = xbmcgui.ListItem('Search', iconImage='DefaultVideo.png')
 	xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
-	urls = common.parseDOM(content, "a", attrs = { "class": "mainmenulnk" }, ret = "href")
+	urls = common.parseDOM(content, "a", attrs = { "class": "mainmenulnk" }, ret = "rel")
 	titles = common.parseDOM(content, "a", attrs = { "class": "mainmenulnk" })
 	for x in xrange(len(urls)):
 		title = titles[x].encode('utf-8')
-		url = build_url({'mode': 'category', 'url': urls[x]})
+		url = build_url({'mode': 'category', 'ylan': urls[x]})
 		li = xbmcgui.ListItem(title, iconImage='DefaultVideo.png')
 		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 	xbmcplugin.endOfDirectory(addon_handle)
 
 elif mode[0] == 'category':
-	url = args['url'][0]
-	content = readContent(url)
-	titles = common.parseDOM(content, "h2", attrs = {}, ret = 'title')
-	anchors = common.parseDOM(content, "div", attrs = { "class": "r" })
-	urls = common.parseDOM(content, "a", attrs = {}, ret = 'href')
-
-	for x in xrange(len(urls)):
-		title = titles[x]
-		url = build_url({'mode': 'listvideos', 'url': urls[x]})
-		li = xbmcgui.ListItem(title, iconImage='DefaultVideo.png')
+	ylan = args['ylan'][0]
+	for x in xrange(2015, 1939, -1):
+		year = str(x)
+		url = build_url({'mode': 'moviesforyear', 'ysel': year, 'ylan': ylan})
+		li = xbmcgui.ListItem(year, iconImage='DefaultVideo.png')
 		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 	xbmcplugin.endOfDirectory(addon_handle)
+
+elif mode[0] == 'moviesforyear':
+	ylan = args['ylan'][0]
+	ysel = args['ysel'][0]
+	results = getMovies({'ysel' : ysel, 'ygen'  : '0', 'ylan': ylan})
+	xbmc.executebuiltin('Notification(Status!, Fetching individual movie info)')
+	for x in xrange(len(results)):
+		link = common.parseDOM(results[x], "a", attrs = { "title": "Play" }, ret = 'href')
+		title = common.parseDOM(results[x], "a", attrs = {})
+		name = title[0]
+		url = build_url({'mode': 'listresolutions', 'url': link[0], 'name': name})
+		li = xbmcgui.ListItem(name, iconImage=getImage(link[0]))
+		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
+	xbmcplugin.endOfDirectory(addon_handle)
+
 
 elif mode[0] == 'search':
 	print 'Requesting kb'
@@ -127,6 +152,7 @@ elif mode[0] == 'listresolutions':
 	url = args['url'][0]
 	name = args['name'][0]
 	list = getVideoLinks(url)
+	xbmc.executebuiltin('Notification(Info!, Fetching info for '+name+')')
 	for video in list:
 		print "the image url is " + video["image"]
 		li = xbmcgui.ListItem(video["title"], iconImage=video["image"])
