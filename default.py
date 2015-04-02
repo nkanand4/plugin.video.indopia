@@ -101,6 +101,7 @@ if mode is None:
 	li = xbmcgui.ListItem('Search', iconImage='DefaultVideo.png')
 	xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 	urls = common.parseDOM(content, "a", attrs = { "class": "mainmenulnk" }, ret = "rel")
+	print urls
 	titles = common.parseDOM(content, "a", attrs = { "class": "mainmenulnk" })
 	for x in xrange(len(urls)):
 		title = titles[x].encode('utf-8')
@@ -113,17 +114,43 @@ elif mode[0] == 'category':
 	ylan = args['ylan'][0]
 	for x in xrange(2015, 1939, -1):
 		year = str(x)
-		url = build_url({'mode': 'moviesforyear', 'ysel': year, 'ylan': ylan})
+		url = build_url({'mode': 'listpages', 'ysel': year, 'ylan': ylan})
 		li = xbmcgui.ListItem(year, iconImage='DefaultVideo.png')
 		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 	xbmcplugin.endOfDirectory(addon_handle)
 
-elif mode[0] == 'moviesforyear':
+elif mode[0] == 'listpages':
 	ylan = args['ylan'][0]
 	ysel = args['ysel'][0]
+	page = 0
+	results = getMovies({'ysel' : ysel, 'ygen'  : '0', 'ylan': ylan})
+	xbmc.executebuiltin('Notification(Status!, Creating pagination)')
+	for x in xrange(0, len(results), 10):
+		title = common.parseDOM(results[x], "a", attrs = {})
+		namestart = title[0]
+		last = x+9
+		if last > len(results):
+			last = len(results) - 1
+		title = common.parseDOM(results[last], "a", attrs = {})
+		nameend = title[0]
+		name = namestart + ' ...... ' + nameend
+		url = build_url({'mode': 'listpaginatedmovies', 'page': str(page), 'name': name, 'ysel' : ysel, 'ylan': ylan})
+		li = xbmcgui.ListItem(name, iconImage='DefaultVideo.png')
+		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
+		page += 1
+	xbmcplugin.endOfDirectory(addon_handle)
+
+elif mode[0] == 'listpaginatedmovies':
+	ylan = args['ylan'][0]
+	ysel = args['ysel'][0]
+	page = int(args['page'][0])
 	results = getMovies({'ysel' : ysel, 'ygen'  : '0', 'ylan': ylan})
 	xbmc.executebuiltin('Notification(Status!, Fetching individual movie info)')
-	for x in xrange(len(results)):
+	start = page * 10
+	end = start+10
+	if end > len(results):
+		end = len(results) - 1
+	for x in xrange(start, end):
 		link = common.parseDOM(results[x], "a", attrs = { "title": "Play" }, ret = 'href')
 		title = common.parseDOM(results[x], "a", attrs = {})
 		name = title[0]
