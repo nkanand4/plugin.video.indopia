@@ -129,7 +129,7 @@ elif mode[0] == 'listpages':
 		title = common.parseDOM(results[x], "a", attrs = {})
 		namestart = title[0]
 		last = x+9
-		if last > len(results):
+		if last >= len(results):
 			last = len(results) - 1
 		title = common.parseDOM(results[last], "a", attrs = {})
 		nameend = title[0]
