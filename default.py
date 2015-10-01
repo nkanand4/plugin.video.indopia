@@ -16,6 +16,7 @@ else:
     import json as simplejson
 
 website = 'http://www.indopia.com'
+__icon__ = xbmcaddon.Addon().getAddonInfo('icon')
 base_url = sys.argv[0]
 
 addon_handle = int(sys.argv[1])
@@ -45,10 +46,9 @@ def GUIEditExportName():
 	return(name)
 
 def getMovies(postData):
-	xbmc.executebuiltin('Notification(Status!, Requesting listing page.)')
+	xbmc.executebuiltin('Notification(Status!, Requesting listing page., 500, __icon__)')
 	content = getMovieListingPage(postData)
 	hahadiv = common.parseDOM(content, "div", attrs = { "class": "haha" })
-	xbmc.executebuiltin('Notification(Status!, Parsing links now...)')
 	results = common.parseDOM(hahadiv, "div", attrs = { "style": "float:left;width:425px;margin:5px 0px;border:red solid 0px;" })
 	return results
 
@@ -70,7 +70,7 @@ def getImage(url):
 	thumbnail = common.parseDOM(content, "meta", attrs = { "property": "og:image"}, ret="content")
 	return thumbnail[0]
 
-def getVideoLinks(url):
+def getVideoLinks(url, name):
 	print "Reading " + url
 	content = readContent('http://www.indopia.com/'+url)
 	thumbnail = getImage(url)
@@ -90,7 +90,7 @@ def getVideoLinks(url):
 		if jsurl is None:
 			video = {}
 			video["image"] = thumbnail
-			video["title"] = "Play " + titles[index] + " resolution"
+			video["title"] = name + " in " + titles[index] + " resolution"
 			video["link"] = server+'/vod/_definsts_/mp4:mp4/'+titles[index].lower()+'/'+id+'.mp4/playlist.m3u8'
 			list.append(video)
 	return list
@@ -124,7 +124,7 @@ elif mode[0] == 'listpages':
 	ysel = args['ysel'][0]
 	page = 0
 	results = getMovies({'ysel' : ysel, 'ygen'  : '0', 'ylan': ylan})
-	xbmc.executebuiltin('Notification(Status!, Creating pagination)')
+	xbmc.executebuiltin('Notification(Status!, Creating pagination, 500, __icon__)')
 	for x in xrange(0, len(results), 10):
 		title = common.parseDOM(results[x], "a", attrs = {})
 		namestart = title[0]
@@ -133,7 +133,7 @@ elif mode[0] == 'listpages':
 			last = len(results) - 1
 		title = common.parseDOM(results[last], "a", attrs = {})
 		nameend = title[0]
-		name = namestart + ' ...... ' + nameend
+		name = namestart + ' .... ' + nameend
 		url = build_url({'mode': 'listpaginatedmovies', 'page': str(page), 'name': name, 'ysel' : ysel, 'ylan': ylan})
 		li = xbmcgui.ListItem(name, iconImage='DefaultVideo.png')
 		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
@@ -149,7 +149,7 @@ elif mode[0] == 'listpaginatedmovies':
 	start = page * 10
 	end = start+10
 	if end > len(results):
-		end = len(results) - 1
+		end = len(results)
 	for x in xrange(start, end):
 		link = common.parseDOM(results[x], "a", attrs = { "title": "Play" }, ret = 'href')
 		title = common.parseDOM(results[x], "a", attrs = {})
@@ -178,8 +178,8 @@ elif mode[0] == 'search':
 elif mode[0] == 'listresolutions':
 	url = args['url'][0]
 	name = args['name'][0]
-	list = getVideoLinks(url)
-	xbmc.executebuiltin('Notification(Info!, Fetching info for '+name+')')
+	list = getVideoLinks(url, name)
+	xbmc.executebuiltin('Notification(Info!, Fetching info for '+name+', 500, __icon__)')
 	for video in list:
 		print "the image url is " + video["image"]
 		li = xbmcgui.ListItem(video["title"], iconImage=video["image"])
