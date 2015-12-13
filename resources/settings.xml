@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <setting id="server" type="labelenum" default="http://38.74.197.40" 
-        label="Server" values="http://38.74.197.40|http://38.74.197.41"/>
+    <setting id="server" type="labelenum" default="Automatic"
+        label="Server" values="Automatic|http://38.74.197.40|http://38.74.197.41"/>
 </settings>
