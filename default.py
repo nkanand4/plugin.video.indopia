@@ -64,6 +64,11 @@ def getMovieListingPage(postData):
     response = urllib2.urlopen(req)
     return response.read()
 
+def getCategories():
+    url = 'http://www.indopia.com/movies/index/years/'
+    content = readContent(url)
+    categories = common.parseDOM(content, "select", attrs = { "name": "ygen"})
+    return common.parseDOM(categories, "option")
 
 def readContent(url):
     response = urllib.urlopen(url)
@@ -121,16 +126,16 @@ if mode is None:
     titles = common.parseDOM(content, "a", attrs = { "class": "mainmenulnk" })
     for x in xrange(len(urls)):
         title = titles[x].encode('utf-8')
-        url = build_url({'mode': 'category', 'ylan': urls[x]})
+        url = build_url({'mode': 'listyears', 'ylan': urls[x]})
         li = xbmcgui.ListItem(title, iconImage='DefaultVideo.png')
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
     xbmcplugin.endOfDirectory(addon_handle)
 
-elif mode[0] == 'category':
+elif mode[0] == 'listyears':
     ylan = args['ylan'][0]
-    for x in xrange(2015, 1939, -1):
+    for x in xrange(2016, 1939, -1):
         year = str(x)
-        url = build_url({'mode': 'listpages', 'ysel': year, 'ylan': ylan})
+        url = build_url({'mode': 'listpages', 'ysel': year, 'ylan': ylan, 'showcategory': 1})
         li = xbmcgui.ListItem(year, iconImage='DefaultVideo.png')
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
     xbmcplugin.endOfDirectory(addon_handle)
@@ -138,9 +143,15 @@ elif mode[0] == 'category':
 elif mode[0] == 'listpages':
     ylan = args['ylan'][0]
     ysel = args['ysel'][0]
+    ygen = args.get('ygen', [0])[0]
+    xbmc.log(msg="ygen is " + str(ygen) + '::ysel::' + str(ysel) + '::ylan::' + str(ylan))
     page = 0
-    results = getMovies({'ysel' : ysel, 'ygen'  : '0', 'ylan': ylan})
+    if ygen == 0:
+        url = build_url({'mode': 'listcategories', 'ysel': ysel, 'ylan': ylan})
+        categorylabel = xbmcgui.ListItem('Categories', iconImage='DefaultVideo.png')
+        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=categorylabel, isFolder=True)
     xbmc.executebuiltin('Notification(Status!, Creating pagination, 500, appicon)')
+    results = getMovies({'ysel' : ysel, 'ygen'  : ygen, 'ylan': ylan})
     for x in xrange(0, len(results), 10):
         name = ''
         last = x+9
@@ -149,17 +160,31 @@ elif mode[0] == 'listpages':
         for t in xrange(x, last):
             name = name + common.parseDOM(results[t], "a", attrs={})[0] + ' - '
         name = name + common.parseDOM(results[last], "a", attrs={})[0]
-        url = build_url({'mode': 'listpaginatedmovies', 'page': str(page), 'name': name, 'ysel' : ysel, 'ylan': ylan})
+        url = build_url({'mode': 'listpaginatedmovies', 'page': str(page), 'name': name, 'ysel' : ysel, 'ylan': ylan, 'ygen': ygen})
         li = xbmcgui.ListItem(name, iconImage='DefaultVideo.png')
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
         page += 1
     xbmcplugin.endOfDirectory(addon_handle)
 
+elif mode[0] == 'listcategories':
+    ylan = args['ylan'][0]
+    ysel = args['ysel'][0]
+    results = getCategories()
+    xbmc.log(msg='Total count of options'+str(len(results)))
+    for x in xrange(1, len(results)):
+        name = results[x]
+        url = build_url({'mode': 'listpages', 'ysel': ysel, 'ylan': ylan, 'ygen': x})
+        li = xbmcgui.ListItem(name, iconImage='DefaultVideo.png')
+        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
+    xbmcplugin.endOfDirectory(addon_handle)
+
 elif mode[0] == 'listpaginatedmovies':
     ylan = args['ylan'][0]
     ysel = args['ysel'][0]
+    ygen = args.get('ygen', [0])[0]
     page = int(args['page'][0])
-    results = getMovies({'ysel' : ysel, 'ygen'  : '0', 'ylan': ylan})
+    xbmc.log(msg="listpaginatedmovies args " + str(ygen) + '::ysel::' + str(ysel) + '::ylan::' + str(ylan))
+    results = getMovies({'ysel' : ysel, 'ygen'  : ygen, 'ylan': ylan})
     xbmc.executebuiltin('Notification(Status!, Fetching individual movie info)')
     start = page * 10
     end = start+10
