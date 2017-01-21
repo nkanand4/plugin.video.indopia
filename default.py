@@ -5,17 +5,9 @@ import xbmcplugin
 import xbmcaddon
 reload(sys)
 sys.setdefaultencoding('utf8')
-if sys.version_info < (2, 7):
-    import simplejson
-else:
-    import json as simplejson
 import CommonFunctions
 common = CommonFunctions
 common.plugin = "Indopia"
-if sys.version_info < (2, 7):
-    import simplejson
-else:
-    import json as simplejson
 
 website = 'http://www.indopia.com'
 appicon = 'http://www.indopia.com/images/logo.jpg'
@@ -92,13 +84,14 @@ def getLinkPrefix(content):
 def getVideoLinks(url, name):
     print "Reading " + url
     content = readContent('http://www.indopia.com/'+url)
+    ipaddress = getLinkPrefix(content)
     thumbnail = getImage(url)
     url = url.replace('./showtime/watch/movie/','')
     id = re.sub(r'/.*', '', url)
     indopiasettings = xbmcaddon.Addon('plugin.video.indopia')
     server = indopiasettings.getSetting('server')
     if server == 'Automatic':
-        server = 'http://' + getLinkPrefix(content)
+        server = 'http://' + ipaddress
     linksContainer = common.parseDOM(content, "div", attrs = { "class": "bw-cont"})
     linksList = common.parseDOM(linksContainer, "ul", attrs = {})
     links = common.parseDOM(linksList, "a", attrs = {}, ret = "href")
@@ -110,9 +103,16 @@ def getVideoLinks(url, name):
         jsurl = re.compile("javascript").search(links[index])
         if jsurl is None:
             video = {}
+            html = readContent(links[index])
+            # read all the urls on the page
+            # re.findall(r"((https?):((//)|(\\\\))+([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)", html)
+            vid_link_tuple = re.findall(r"((https?):((//)|(\\\\))+\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b([\w\d:#@%/;$()~_?\+-=\\\.&](#!)?)*)", html)
+            if vid_link_tuple:
+                video["link"] = vid_link_tuple[0][0]
+            else:
+                video["link"] = server+'/vod/_definsts_/mp4:mp4/'+titles[index].lower()+'/'+id+'.mp4/playlist.m3u8'
             video["image"] = thumbnail
             video["title"] = name + " in " + titles[index] + " resolution"
-            video["link"] = server+'/vod/_definsts_/mp4:mp4/'+titles[index].lower()+'/'+id+'.mp4/playlist.m3u8'
             list.append(video)
     return list
 
