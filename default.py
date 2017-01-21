@@ -3,6 +3,7 @@ import sys, urllib, urllib2, json, urlparse, re
 import xbmc, xbmcgui
 import xbmcplugin
 import xbmcaddon
+import datetime
 reload(sys)
 sys.setdefaultencoding('utf8')
 import CommonFunctions
@@ -133,7 +134,8 @@ if mode is None:
 
 elif mode[0] == 'listyears':
     ylan = args['ylan'][0]
-    for x in xrange(2016, 1939, -1):
+    year = datetime.datetime.now().year
+    for x in xrange(year, 1939, -1):
         year = str(x)
         url = build_url({'mode': 'listpages', 'ysel': year, 'ylan': ylan, 'showcategory': 1})
         li = xbmcgui.ListItem(year, iconImage='DefaultVideo.png')
